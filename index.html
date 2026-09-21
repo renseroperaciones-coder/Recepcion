@@ -1793,6 +1793,14 @@ const TABLA = {
                 document.querySelector(`input[name="lugarServicio"][value="${datos.lugarServicio==='Insitu'?'Insitu':'Lab'}"]`).checked=true;
                 fechaHoraEditada=datos.fechaHoraEditada ?? true;
                 itemsData=JSON.parse(JSON.stringify(datos.itemsData || []));
+                if(esIncendio()) {
+                    itemsData = itemsData.map((row, idx) => ({
+                        ...row,
+                        item: row?.item ?? (idx + 1),
+                        campos: (row && typeof row.campos === 'object' && row.campos) ? row.campos : {},
+                        marcas: (row && typeof row.marcas === 'object' && row.marcas) ? row.marcas : {}
+                    }));
+                }
                 if(!itemsData.length) crearNuevaFilaData(1);
                 renderTabla();
             }
@@ -1826,6 +1834,9 @@ const TABLA = {
                 if(esIncendio()) document.getElementById('totalEquipos').value=itemsData.filter(tieneDatosEquipo).length;
             }
             function actualizarIncendio(i,col,value,marca=false) {
+                if(!itemsData[i]) itemsData[i]={item:i+1,campos:{},marcas:{}};
+                if(!itemsData[i].campos || typeof itemsData[i].campos!=='object') itemsData[i].campos={};
+                if(!itemsData[i].marcas || typeof itemsData[i].marcas!=='object') itemsData[i].marcas={};
                 itemsData[i][marca?'marcas':'campos'][col]=value;actualizarTotal();
             }
             renderTabla = function() {
@@ -1920,7 +1931,7 @@ confirmarCorrelativoUsado = function(){ /* No aplica: el número es manual. */ }
             for(let i=0;i<cfg.perPage;i++){
                 const row=rows[p*cfg.perPage+i],r=10+i;
                 escribir(ws,'B'+r,row?p*cfg.perPage+i+1:null);
-                cfg.fields.forEach(f=>escribir(ws,f.col+r,row?(f.group==='identity'?(row.campos[f.col]||null):(row.marcas[f.col]?'X':null)):null));
+                cfg.fields.forEach(f=>escribir(ws,f.col+r,row?(f.group==='identity'?((row.campos?.[f.col])||null):(row.marcas?.[f.col]?'X':null)):null));
             }
             escribirRotulado(ws,cfg.notes,'OBSERVACIONES:',datos.observaciones);
             const nota=ws.getCell(cfg.notes);nota.alignment={...nota.alignment,wrapText:true};
